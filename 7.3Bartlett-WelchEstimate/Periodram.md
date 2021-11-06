@@ -1,4 +1,4 @@
-'''
+```
 clear all
 N=100; % length of signal 
 t=0:N-1;  % time
@@ -15,4 +15,4 @@ xlabel('Normalised Frequency')
 ylabel('PSD [a.u.]')
 title('Periodogram of WGN')
 var(S)
-'''
+```
