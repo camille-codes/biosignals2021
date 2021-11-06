@@ -16,3 +16,4 @@ ylabel('PSD [a.u.]')
 title('Periodogram of WGN')
 var(S)
 ```
+Increasing N, still very noisy. 
