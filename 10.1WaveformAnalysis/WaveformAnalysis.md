@@ -1,3 +1,4 @@
+![Image of Yaktocat](https://github.com/camille-codes/biosignals2021/blob/main/10.1WaveformAnalysis/10.1.png)
 ```
 clear all
 %close all
