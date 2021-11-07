@@ -1,4 +1,4 @@
-'''
+```
 clear all
 close all
 
@@ -110,4 +110,4 @@ xlabel('Freq. [octave]')
 ylabel('PSD [dB]')
 title('Pink Noise')
 
-'''
+```
