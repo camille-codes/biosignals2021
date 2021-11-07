@@ -1,0 +1,127 @@
+
+clear all
+close all
+
+load ECGdata1000
+
+%f_s = 1000; %sampling frequency [Hz] loaded from ECGdata1000
+T =1/f_s;   % sampling period [s]
+N = length(t); 
+A_HF = 0.08; % High Frequency Noise Amplitude
+A_LF = 3; % High Frequency Noise Amplitude
+
+% ECG signal
+%xHF = A_HF*max(ecg)*randn(1,N); % High Frequency Gaussian white noise
+xLF = A_LF*max(ecg)*t/t(end); % Low Frequency noise
+ecg_noise = ecg+xLF; % ECG signal with high and low freq noise
+
+
+
+
+%% Frequency response of filter
+%Choose one the following angular frequency vectors (by uncommenting) from zero up to the
+%normalised Nyquist frequency 
+w = pi*(0:floor(N/2))/(N/2); % normalised angular frequency 
+f_Hz = (f_s/2)*(0:floor(N/2))/(N/2); % corresponding positive frequency vector (Hz)
+
+%Enter frequency response for H_hat
+w = w + 1e-6; % too avoid division by zero  
+p =0.95;  % position of pole
+z = exp(i*w);
+H_2pt_hat =  (1-z.^-1); % 2 point difference filter
+H_3pt_hat =  (1-z.^-2)/2; % 3 point difference filter
+H_zp_hat =  (1-z.^-1)./(1-p*z.^-1); % zero-pole difference filter
+
+% %% Filter signal 
+% A =[1 -1];  % a(1)*y(n) = b(1)*x(n) + b(2)*x(n-1) + ... + b(nb+1)*x(n-nb)
+% B= [1 0 0 0 0 0 0 0 -1]/8; % - a(2)*y(n-1) - ... - a(na+1)*y(n-na)
+% 
+% ecg_filtered = filter(B,A,ecg_noise);
+%  
+% 
+% %% Frequency response of signal 
+% ecg_hat = fft(ecg);  % freq response ecg
+% xHF_hat = fft(xHF);  % freq response HF noise
+% ecg_noise_hat = fft(ecg_noise);  % freq response input signa
+% ecg_filtered_hat  = fft(ecg_filtered);  % freq response filtered signal
+
+%% Ploting Frequency Reponse filter
+
+figure(1)
+clf
+subplot(2,1,1)
+hold on 
+plot(f_Hz,abs(H_2pt_hat))
+plot(f_Hz,abs(H_3pt_hat))
+plot(f_Hz,abs(H_zp_hat))
+
+xlabel('Freq. [Hz]')
+ylabel('Amplitude [a.u.]')
+title('Filter freq response magnitude')
+legend('2pt','3pt','zero-pole')
+ 
+
+subplot(2,1,2)
+hold on
+plot(f_Hz,angle(H_2pt_hat))
+plot(f_Hz,angle(H_3pt_hat))
+plot(f_Hz,angle(H_zp_hat))
+xlabel('Freq. [Hz]')
+ylabel('Phase [rad]')
+title('Filter freq response phase')
+
+
+% %% Plotting Filtered Output
+% figure(2)
+% clf
+% % ECG input 
+% subplot(2,1,1)
+% plot(t,ecg_noise,'b')
+% xlabel('Time [s]')
+% ylabel('Amplitude [a.u.]')
+% xlim([0 t(end)]);
+% title('ECG with HF  noise')
+% hold on
+% plot(t,ecg,'m')
+% legend('ecg+noise','ecg')
+% xlim([0 10])
+% 
+% % ECG filtered output
+% subplot(2,1,2)
+% plot(t,ecg_filtered,'g')
+% xlabel('Time [s]')
+% ylabel('Amplitude [a.u.]')
+% xlim([0 t(end)]);
+% title('filtered ECG')
+% hold on
+% plot(t,ecg,'m')
+% legend('ecg filtered','ecg')
+% xlim([0 10])
+% 
+% %% Ploting Frequency Reponse signal
+% figure(3) 
+% clf
+% subplot(2,1,1)
+% hold on
+% plot(f_Hz,20*log10(abs(ecg_noise_hat(1:floor(N/2)+1))),'b')
+% %pause
+% plot(f_Hz,20*log10(abs(ecg_filtered_hat(1:floor(N/2)+1))),'g')
+% title('Frequency Response of ECG signals')
+% legend('ecg+noise','ecg filtered')
+% xlim([0 5])
+% 
+% 
+% subplot(2,1,2)
+% hold on
+% %pause
+% plot(f_Hz,20*log10(abs(ecg_hat(1:floor(N/2)+1))),'m')
+% %pause
+% plot(f_Hz,20*log10(abs(xHF_hat(1:floor(N/2)+1))),'k')
+% xlabel('Freq. [Hz]')
+% ylabel('Amplitude [dB]')
+% 
+% 
+% legend('ecg','noise')
+% xlim([0 5])
+% 
+% % 
