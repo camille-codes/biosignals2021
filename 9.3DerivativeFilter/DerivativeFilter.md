@@ -1,3 +1,4 @@
+![Image of Yaktocat](https://github.com/camille-codes/biosignals2021/blob/main/9.3DerivativeFilter/9.3.png)
 ```
 clear all
 %close all
