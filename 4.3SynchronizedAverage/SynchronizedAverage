@@ -1,0 +1,118 @@
+clear all
+close all
+
+load ECGdata1000
+
+%f_s = 100; %sampling frequency [Hz] loaded from ECGdata1000
+T =1/f_s;   % sampling period [s]
+N = length(t); 
+A_HF = 0.08; % High Frequency Noise Amplitude
+%A_LF = 3; % High Frequency Noise Amplitude
+
+% ECG signal
+xHF = A_HF*max(ecg)*randn(1,N); % High Frequency Gaussian white noise
+ecg_noise = ecg+xHF; % ECG signal with high and low freq noise
+
+figure(1)
+clf
+%plot ECG input 
+hold on
+plot(ecg_noise)
+xlabel('Time [samples]')
+ylabel('Amplitude [a.u.]')
+%xlim([0 t(end)]);
+title('ECG with HF  noise')
+
+
+%% Find trigger points
+%define template
+%it_template = input('input a range of sample indcies as a vector a:b for the QRS template:');
+it_template = 750:900;  % time index for QRS template
+QRStemplate = ecg_noise(it_template); %  QRS template
+QRStemplate_norm = QRStemplate/norm(QRStemplate);  % normalised template
+plot(it_template, QRStemplate,'m')
+
+pause
+% calculate cross correalation
+xcorr_QRS = xcorr(ecg_noise,QRStemplate_norm); %cross correlation of template and signal with zero padding
+xcorr_QRS = xcorr_QRS(end-length(ecg_noise)-length(QRStemplate)/2: end-length(QRStemplate)/2); % extract correct portion
+
+% plot cross correlation
+plot((1:length(xcorr_QRS)),xcorr_QRS)
+
+
+%th = input('input a threshold for cross correlation:');
+th = 16; % Choose a threshold for triggers
+bn = (xcorr_QRS > th); % binary classification of points 1 is > th, 0 is <= th 
+bn_edge = diff(bn);  % find edges of bins 
+
+% rising edge of the suprathreshold xcorr
+%rise = input('Looking at the code, is a rising edge of the xcorr +1 or -1:');
+rise = 1; 
+it_start = find(bn_edge ==rise)+1;
+
+% falling  edge of the suprathreshold xcorr
+%fall = input('Looking at the code, is a falling edge of the xcorr +1 or -1:');
+fall = -1; 
+it_end = find(bn_edge ==fall);
+
+
+
+% plot start and end of every suprathreshold  segement
+plot(it_start,xcorr_QRS(it_start),'mo') % plot starts
+plot(it_end,xcorr_QRS(it_end),'go')  %plot ends
+
+
+
+% find peaks of suprathreshold xcorr
+i_triggers = zeros(size(it_start));
+for k =1:length(it_start)
+    xcorr_QRSk = xcorr_QRS;
+    xcorr_QRSk(1:it_start(k)-1)= 0;
+    xcorr_QRSk(it_end(k)+1:end)= 0;
+    [~,i_triggers(k)] = max(xcorr_QRSk);
+end
+
+figure(1)
+%plot peaks
+plot(i_triggers,xcorr_QRS(i_triggers),'r*')
+
+%% Calculate synchonized average
+% extract period around each trigger
+%offset = input('extract a period around each trigger to average: input number of samples before trigger to start each period:');
+%period = input('extract a period around each trigger to average: input total number of samples for each period:');
+offset = 200; % number of samples before trigger to include
+period = min(diff(i_triggers)); % period between triggers
+%period = 82; 
+pstart = i_triggers(2)-offset; 
+pend = i_triggers(2)-offset+period;
+
+synch_av = ecg_noise(pstart: pend);
+synch_sum = synch_av;
+figure(2)
+clf
+plot(synch_av)
+xlabel('Time [samples]')
+ylabel('Amplitude [a.u.]')
+%xlim([0 t(end)]);
+title('Synchonised Average n=1')
+for k = 3: length(i_triggers)-1
+    pstart = i_triggers(k)-offset; 
+    pend = i_triggers(k)-offset+period;
+    synch_sum = synch_sum + ecg_noise(pstart: pend);
+    synch_av = synch_sum/k;
+    figure(2)
+    clf
+    plot(synch_av)
+    xlabel('Time [samples]')
+    ylabel('Amplitude [a.u.]')
+    title(['Synchonised Average n=',num2str(k-1)])
+    pause
+end
+
+
+
+
+
+
+
