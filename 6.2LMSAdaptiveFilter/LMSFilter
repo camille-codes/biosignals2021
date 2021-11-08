@@ -1,0 +1,66 @@
+clear 
+
+
+load ECGdata_fetal_maternal
+
+N=length(ecg_f);
+r = ecg_m'- mean(ecg_m);  % reference signal
+v = ecg_f'- mean(ecg_f);  % desired signal
+
+% interference signal = filtered version of reference signal
+M=33;  % filter length 
+Am = 3; % amplitude of interference
+filt = dsp.FIRFilter;  % specify filter
+filt.Numerator = Am*fircband(M-1,[0 0.4 0.5 1],[1 1 0 0],[1 0.2],... 
+{'w' 'c'});
+
+m = filt(r);   % interference signal 
+
+x = v + m; % primary input signal 
+
+
+mu = 0.002; % step size
+
+% Matlab LSM filter object: required DSP Systems toolbox
+lms = dsp.LMSFilter(M,'StepSize',mu)
+[y,e,w] = lms(r,x); 
+   
+
+%% explit implementation of LSM algorithm 
+ww = zeros(M,1);  % initialise weights
+ for n = 1:(length(r)-M)
+     rr = flipud(r(n+(0:M-1)));  %  extract and update reference signal 
+     xx = x(n+M-1);             % update primary input signal 
+     ee(n) = xx - ww'*rr;   
+     % update error
+     ww = ww +mu*ee(n)*rr;  % update weights
+ end
+
+ 
+figure(1)
+subplot(3,1,1)
+plot(t,x)
+title('Primary Input Signal')
+xlim([30 40])
+
+subplot(3,1,2)
+plot(t,[v e])
+title('Desired Signal(fetal ecg)')
+legend('True', 'Estimated')
+xlim([30 40])
+
+subplot(3,1,3)
+plot(t,[m y])
+title('Interence Signal(filtered maternal ecg)')
+legend('True', 'Estimated')
+xlabel('Time [s]')
+ylabel('Signal value')
+xlim([30 40])
+
+figure(2)
+stem([(filt.Numerator).', w, ww])
+title('System Identification by Adaptive LMS Algorithm')
+legend('True','Estimated (matlab)','Estimated (own)',...
+       'Location','NorthEast')
+ 
+ 
